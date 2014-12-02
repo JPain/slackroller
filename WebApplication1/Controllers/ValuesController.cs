@@ -24,6 +24,7 @@ namespace WebApplication1.Controllers
     public class outgoingSlack
     {
         public string text { get; set; }
+        public bool unfurl_links { get; set; }
     }
 
     public class payload
@@ -1059,7 +1060,7 @@ namespace WebApplication1.Controllers
 
             var item = paydirt[rolledInt.Next(paydirt.Length)];
 
-            outgoingSlack result = new outgoingSlack { text = item.text + " " + item.imageURL };
+            outgoingSlack result = new outgoingSlack { text = item.text + " " + item.imageURL, unfurl_links = true };
 
             return Ok(result);
         }
