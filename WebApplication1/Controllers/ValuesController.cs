@@ -1052,20 +1052,6 @@ namespace WebApplication1.Controllers
         };
         #endregion
 
-
-        // GET api/values
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }   
-
-        // GET api/values/5
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/values
         public IHttpActionResult Post([FromBody]incomingSlack message)
         {
 
@@ -1076,16 +1062,6 @@ namespace WebApplication1.Controllers
             outgoingSlack result = new outgoingSlack { text = item.text + " " + item.imageURL };
 
             return Ok(result);
-        }
-
-        // PUT api/values/5
-        public void Put(int id, [FromBody]string value)
-        {
-        }
-
-        // DELETE api/values/5
-        public void Delete(int id)
-        {
         }
     }
 }
