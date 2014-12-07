@@ -1056,6 +1056,9 @@ namespace WebApplication1.Controllers
         public IHttpActionResult Post([FromBody]incomingSlack message)
         {
 
+            if (validateSlackRequest(message) == false)
+               return Ok("POST request didn't validate");
+
             Random rolledInt = new Random();
 
             var item = paydirt[rolledInt.Next(paydirt.Length)];
@@ -1063,6 +1066,22 @@ namespace WebApplication1.Controllers
             outgoingSlack result = new outgoingSlack { text = item.text + " " + item.imageURL, unfurl_links = true };
 
             return Ok(result);
+        }
+
+        bool validateSlackRequest(incomingSlack request)
+        {
+            if (request.token != null &&
+                request.team_id != null &&
+                request.channel_id != null &&
+                request.channel_name != null &&
+                request.timestamp != null &&
+                request.user_id != null &&
+                request.user_name != null &&
+                request.text != null &&
+                request.trigger_word != null)
+                return true;
+
+            return false;
         }
     }
 }
