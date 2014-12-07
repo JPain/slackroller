@@ -36,7 +36,7 @@ namespace WebApplication1.Controllers
     public class SlackController : ApiController
     {
         #region Payload
-        payload[] paydirt = new payload[]
+        static payload[] paydirt = new payload[]
         {
             new payload { imageURL = "http://i.imgur.com/zCpB7gM.jpg", text = "Alexis Ren"},
             new payload { imageURL = "http://i.imgur.com/zL8p4YT.jpg", text = "Cut-off tank top"},
@@ -1053,16 +1053,17 @@ namespace WebApplication1.Controllers
         };
         #endregion
 
+        static Queue<payload> itemQueue = new Queue<payload>(paydirt);
+
         public IHttpActionResult Post([FromBody]incomingSlack message)
         {
 
             if (validateSlackRequest(message) == false)
-               return Ok("POST request didn't validate");
+                return Ok("POST request didn't validate");
+            if (itemQueue.Count == 0)
+                return Ok(new outgoingSlack { text = "I've run out of items ... soz" });
 
-            Random rolledInt = new Random();
-
-            var item = paydirt[rolledInt.Next(paydirt.Length)];
-
+            payload item = itemQueue.Dequeue();
             outgoingSlack result = new outgoingSlack { text = item.text + " " + item.imageURL, unfurl_links = true };
 
             return Ok(result);
