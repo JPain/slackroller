@@ -1104,18 +1104,24 @@ namespace WebApplication1.Controllers
             CloudQueue queue = queueClient.GetQueueReference("veslack");
 
             queue.CreateIfNotExists();
+            queue.FetchAttributes();
 
-            //if (queue.ApproximateMessageCount == null || queue.ApproximateMessageCount == 0)
-            //{
-            //    initQueue(queue);
-            //}
+            if (queue.ApproximateMessageCount == null || queue.ApproximateMessageCount == 0)
+            {
+                initQueue(queue);
+            }
 
             return queue;
         }
 
         void initQueue(CloudQueue queue){
 
-            foreach (payload item in paydirt)
+            queue.Clear();
+
+            Random rand = new Random();
+            List<payload> ranItems = paydirt.OrderBy(c => rand.Next()).ToList();
+
+            foreach (payload item in ranItems)
             {
                 string parsedPayload = new JavaScriptSerializer().Serialize(item);
                 CloudQueueMessage message = new CloudQueueMessage(parsedPayload);
