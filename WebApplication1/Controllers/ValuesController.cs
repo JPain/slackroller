@@ -4,6 +4,11 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Web.Script.Serialization;
+using System.Configuration;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Queue;
 
 namespace WebApplication1.Controllers
 {
@@ -1053,17 +1058,16 @@ namespace WebApplication1.Controllers
         };
         #endregion
 
-        static Queue<payload> itemQueue = new Queue<payload>(paydirt);
 
         public IHttpActionResult Post([FromBody]incomingSlack message)
         {
 
             if (validateSlackRequest(message) == false)
                 return Ok("POST request didn't validate");
-            if (itemQueue.Count == 0)
-                return Ok(new outgoingSlack { text = "I've run out of items ... soz" });
 
-            payload item = itemQueue.Dequeue();
+            CloudQueue queue = getQueue();
+
+            payload item = getNextItem(queue);
             outgoingSlack result = new outgoingSlack { text = item.text + " " + item.imageURL, unfurl_links = true };
 
             return Ok(result);
@@ -1071,6 +1075,11 @@ namespace WebApplication1.Controllers
 
         bool validateSlackRequest(incomingSlack request)
         {
+            if (request == null)
+            {
+                return false;
+            }
+
             if (request.token != null &&
                 request.team_id != null &&
                 request.channel_id != null &&
@@ -1083,6 +1092,50 @@ namespace WebApplication1.Controllers
                 return true;
 
             return false;
+        }
+
+        CloudQueue getQueue(){
+
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+            CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
+
+            CloudQueue queue = queueClient.GetQueueReference("veslack");
+
+            queue.CreateIfNotExists();
+
+            //if (queue.ApproximateMessageCount == null || queue.ApproximateMessageCount == 0)
+            //{
+            //    initQueue(queue);
+            //}
+
+            return queue;
+        }
+
+        void initQueue(CloudQueue queue){
+
+            foreach (payload item in paydirt)
+            {
+                string parsedPayload = new JavaScriptSerializer().Serialize(item);
+                CloudQueueMessage message = new CloudQueueMessage(parsedPayload);
+                queue.AddMessage(message);
+            }
+            
+        }
+
+        payload getNextItem(CloudQueue queue)
+        {
+            CloudQueueMessage retrievedMessage = queue.GetMessage();
+            queue.DeleteMessage(retrievedMessage);
+
+            var json = new JavaScriptSerializer();
+
+            var parsedMessage = json.DeserializeObject(retrievedMessage.AsString);
+
+            payload parsedPayload = json.ConvertToType<payload>(parsedMessage);
+
+            return parsedPayload;
         }
     }
 }
